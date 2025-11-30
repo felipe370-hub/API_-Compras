@@ -1,7 +1,92 @@
-@app.get("/itens-pedido-detalhado/{pedido_id}")
-async def itens_pedido_detalhado(pedido_id: int):
+import os
+from typing import Optional, List
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+import httpx
+
+load_dotenv()
+
+# ------------------- CONFIGURAÇÃO SUPABASE -------------------
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+POSTGREST_URL = f"{SUPABASE_URL}/rest/v1"
+
+CLIENTES_TABLE = "clientes"
+PRODUTOS_TABLE = "produtos"
+PEDIDOS_TABLE = "pedidos"
+ITENS_PEDIDO_TABLE = "itens_pedido"
+
+if not SUPABASE_URL or not ANON_KEY:
+    raise RuntimeError("Configure SUPABASE_URL e SUPABASE_ANON_KEY no .env")
+
+# ------------------- INSTÂNCIA FASTAPI -------------------
+app = FastAPI(title="API de Compras (FastAPI + Supabase)")
+
+# ------------------- MODELOS -------------------
+class ClienteOut(BaseModel):
+    id: int
+    nome: str
+    email: str
+    telefone: Optional[str]
+    criado_em: str
+
+class ProdutoOut(BaseModel):
+    id: int
+    nome: str
+    preco: float
+    quantidade: int
+    categoria: Optional[str]
+    criado_em: str
+
+class PedidoOut(BaseModel):
+    id: int
+    cliente_id: int
+    total: float
+    status: str
+    criado_em: str
+
+class ItensPedidoOut(BaseModel):
+    id: int
+    pedido_id: int
+    produto_id: int
+    quantidade: int
+    preco_unitario: float
+
+class ItensPedidoDetalhado(BaseModel):
+    id: int
+    pedido_id: int
+    produto_id: int
+    quantidade: int
+    preco_unitario: float
+    produto_nome: Optional[str] = None
+    produto_categoria: Optional[str] = None
+    cliente_nome: Optional[str] = None
+    total_item: float
+    total_pedido: float
+    status_pedido: str
+    criado_em_pedido: str
+
+# ------------------- HELPERS -------------------
+def postgrest_headers(api_key: str = ANON_KEY):
+    return {
+        "apikey": api_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Prefer": "return=representation",
+    }
+
+# ------------------- HEALTH CHECK -------------------
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+# ------------------- ROTA DETALHE DETALHADO -------------------
+@app.get("/pedidos/{pedido_id}/detalhe_detalhado", response_model=List[ItensPedidoDetalhado])
+async def detalhe_detalhado(pedido_id: int):
     async with httpx.AsyncClient(timeout=10) as client:
-        # 1) Buscar pedido
+        # Buscar pedido
         r_pedido = await client.get(f"{POSTGREST_URL}/{PEDIDOS_TABLE}",
                                     headers=postgrest_headers(),
                                     params={"id": f"eq.{pedido_id}"})
@@ -12,24 +97,24 @@ async def itens_pedido_detalhado(pedido_id: int):
             raise HTTPException(404, "Pedido não encontrado")
         pedido = pedido_list[0]
 
-        # 2) Buscar cliente
+        # Buscar cliente
         r_cliente = await client.get(f"{POSTGREST_URL}/{CLIENTES_TABLE}",
                                      headers=postgrest_headers(),
-                                     params={"id": f"eq.{pedido['cliente_id']}"})
+                                     params={"id": f"eq.{pedido['cliente_id']}"} )
         cliente_list = r_cliente.json() if r_cliente.status_code < 400 else []
         cliente_nome = cliente_list[0]['nome'] if cliente_list else None
 
-        # 3) Buscar itens
+        # Buscar itens
         r_itens = await client.get(f"{POSTGREST_URL}/{ITENS_PEDIDO_TABLE}",
                                    headers=postgrest_headers(),
-                                   params={"pedido_id": f"eq.{pedido_id}"})
+                                   params={"pedido_id": f"eq.{pedido_id}"} )
         itens = r_itens.json() if r_itens.status_code < 400 else []
 
-        # 4) Adicionar informações detalhadas em cada item
+        # Adicionar detalhes dos produtos e cliente
         for item in itens:
             r_produto = await client.get(f"{POSTGREST_URL}/{PRODUTOS_TABLE}",
                                          headers=postgrest_headers(),
-                                         params={"id": f"eq.{item['produto_id']}"})
+                                         params={"id": f"eq.{item['produto_id']}"} )
             produto_list = r_produto.json() if r_produto.status_code < 400 else []
             item['produto_nome'] = produto_list[0]['nome'] if produto_list else None
             item['produto_categoria'] = produto_list[0]['categoria'] if produto_list else None
