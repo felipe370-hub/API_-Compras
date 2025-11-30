@@ -51,7 +51,7 @@ GET /health
   "status": "ok"
 
 ---
-🌐 Endpoints e Rotas
+## 🌐 Endpoints e Rotas
 👤 Clientes
 Listar clientes
 GET /clientes
@@ -77,7 +77,7 @@ POST /clientes
 
 
 
-json
+
 Copiar código
 {
   "id": 2,
@@ -87,11 +87,11 @@ Copiar código
   "criado_em": "2025-11-30T03:15:00Z"
 }
 ---
-📦 Produtos
+## 📦 Produtos
 Listar produtos
 GET /produtos
 
-[
+
   {
     "id": 1,
     "nome": "Brigadeiro",
@@ -100,7 +100,7 @@ GET /produtos
     "quantidade": 50,
     "criado_em": "2025-11-30T03:10:00Z"
   }
-]
+
 
 
 
@@ -135,14 +135,14 @@ POST /produtos
 ---
 
 
-🧾 Pedidos
+## 🧾 Pedidos
 Listar pedidos
 GET /pedidos
 
 
 
 
-[
+
   {
     "id": 1,
     "cliente_id": 1,
@@ -150,7 +150,6 @@ GET /pedidos
     "status": "aberto",
     "criado_em": "2025-11-30T03:25:00Z"
   }
-]
 
 
 
@@ -179,6 +178,7 @@ POST /pedidos
   "status": "aberto",
   "criado_em": "2025-11-30T03:30:00Z"
 }
+
 Detalhe detalhado de um pedido
 GET /pedidos/{pedido_id}/detalhe_detalhado
 
@@ -205,7 +205,7 @@ GET /pedidos/{pedido_id}/detalhe_detalhado
 ---
 
 
-📑 Itens do Pedido
+## 📑 Itens do Pedido
 Listar itens do pedido
 GET /itens-pedido
 
