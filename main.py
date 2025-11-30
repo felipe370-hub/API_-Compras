@@ -399,6 +399,16 @@ async def get_item_pedido(item_id: int):
         raise HTTPException(r.status_code, r.text)
     return r.json()
 
+
+@app.get("/pedidos/{pedido_id}/itens", response_model=List[ItensPedidoOut])
+async def get_itens_pedido_by_pedido(pedido_id: int):
+    params = {"select": "*", "pedido_id": f"eq.{pedido_id}"}
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(f"{POSTGREST_URL}/{ITENS_PEDIDO_TABLE}", headers=postgrest_headers(), params=params)
+    if r.status_code >= 400:
+        raise HTTPException(r.status_code, r.text)
+    return r.json()
+
 @app.post("/itens-pedido", response_model=List[ItensPedidoOut], status_code=201)
 async def create_item_pedido(payload: ItensPedidoCreate):
     async with httpx.AsyncClient(timeout=10) as client:
