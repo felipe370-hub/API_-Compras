@@ -1,5 +1,5 @@
 -- ============================================================
--- DROP TABLES (somente para recriar toda a estrutura do zero)
+-- DROP TABLES (para recriar toda a estrutura do zero)
 -- ============================================================
 DROP TABLE IF EXISTS public.itens_pedido CASCADE;
 DROP TABLE IF EXISTS public.pedidos CASCADE;
@@ -52,20 +52,30 @@ CREATE TABLE IF NOT EXISTS public.itens_pedido (
 );
 
 -- ============================================================
+-- DROPS DE FUNÇÕES E TRIGGERS EXISTENTES
+-- ============================================================
+DROP TRIGGER IF EXISTS tr_itens_pedido_after_change ON public.itens_pedido;
+DROP TRIGGER IF EXISTS tr_atualiza_estoque ON public.itens_pedido;
+
+DROP FUNCTION IF EXISTS public.fn_recalcular_total_pedido(bigint) CASCADE;
+DROP FUNCTION IF EXISTS public.trg_atualizar_total_pedido() CASCADE;
+DROP FUNCTION IF EXISTS public.fn_atualizar_estoque() CASCADE;
+
+DROP FUNCTION IF EXISTS public.buscar_produtos(TEXT, TEXT, NUMERIC, NUMERIC, INT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.listar_por_categoria(TEXT) CASCADE;
+
+-- ============================================================
 -- FUNÇÃO PARA RE-CALCULAR TOTAL DO PEDIDO
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.fn_recalcular_total_pedido(p_pedido_id bigint)
+CREATE FUNCTION public.fn_recalcular_total_pedido(p_pedido_id bigint)
 RETURNS void
 LANGUAGE plpgsql
-SET search_path = public, pg_temp
 AS $$
 BEGIN
   UPDATE public.pedidos
-  SET total = COALESCE((
-    SELECT SUM(quantidade * preco_unitario)
-    FROM public.itens_pedido
-    WHERE pedido_id = p_pedido_id
-  ), 0)
+  SET total = COALESCE((SELECT SUM(quantidade * preco_unitario)
+                        FROM public.itens_pedido
+                        WHERE pedido_id = p_pedido_id), 0)
   WHERE id = p_pedido_id;
 END;
 $$;
@@ -73,10 +83,9 @@ $$;
 -- ============================================================
 -- TRIGGER PARA RE-CALCULAR TOTAL
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.trg_atualizar_total_pedido()
+CREATE FUNCTION public.trg_atualizar_total_pedido()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path = public, pg_temp
 AS $$
 DECLARE
   affected_pedido bigint;
@@ -102,8 +111,6 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS tr_itens_pedido_after_change ON public.itens_pedido;
-
 CREATE TRIGGER tr_itens_pedido_after_change
 AFTER INSERT OR UPDATE OR DELETE ON public.itens_pedido
 FOR EACH ROW
@@ -112,10 +119,9 @@ EXECUTE PROCEDURE public.trg_atualizar_total_pedido();
 -- ============================================================
 -- FUNÇÃO PARA CONTROLE AUTOMÁTICO DE ESTOQUE
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.fn_atualizar_estoque()
+CREATE FUNCTION public.fn_atualizar_estoque()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path = public, pg_temp
 AS $$
 DECLARE
   estoque_atual INT;
@@ -133,7 +139,6 @@ BEGIN
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE' THEN
     IF NEW.produto_id <> OLD.produto_id THEN
-      -- devolve o estoque do produto antigo
       UPDATE public.produtos SET quantidade = quantidade + OLD.quantidade WHERE id = OLD.produto_id;
       SELECT quantidade INTO estoque_atual FROM public.produtos WHERE id = NEW.produto_id;
       IF estoque_atual IS NULL THEN
@@ -170,23 +175,10 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS tr_atualiza_estoque ON public.itens_pedido;
-
 CREATE TRIGGER tr_atualiza_estoque
 BEFORE INSERT OR UPDATE OR DELETE ON public.itens_pedido
 FOR EACH ROW
 EXECUTE PROCEDURE public.fn_atualizar_estoque();
-
--- ============================================================
--- RLS DESABILITADO (desenvolvimento)
--- ============================================================
--- NOTE: RLS is disabled for development/testing.
--- For production, re-enable RLS and set up appropriate policies.
--- ============================================================
-ALTER TABLE public.clientes DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.produtos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pedidos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.itens_pedido DISABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- VIEW DETALHADA DE ITENS DE PEDIDO
@@ -211,12 +203,10 @@ JOIN public.produtos p ON ip.produto_id = p.id
 JOIN public.pedidos ped ON ip.pedido_id = ped.id
 JOIN public.clientes c ON ped.cliente_id = c.id;
 
-
-
 -- ============================================================
--- FUNÇÃO RPC PARA BUSCA DE PRODUTOS 
+-- FUNÇÃO RPC PARA BUSCA DE PRODUTOS
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.buscar_produtos(
+CREATE FUNCTION public.buscar_produtos(
     p_nome TEXT DEFAULT NULL,
     p_categoria TEXT DEFAULT NULL,
     p_preco_min NUMERIC DEFAULT NULL,
@@ -234,7 +224,6 @@ RETURNS TABLE (
     criado_em TIMESTAMP WITH TIME ZONE
 )
 LANGUAGE plpgsql
-SET search_path = public, pg_temp
 AS $$
 DECLARE
     sql_query TEXT;
@@ -243,7 +232,6 @@ DECLARE
     v_order_by TEXT;
     v_order_dir TEXT;
 BEGIN
-    -- Normaliza strings vazias para NULL
     IF p_nome IS NOT NULL AND btrim(p_nome) <> '' THEN
         v_nome := p_nome;
     END IF;
@@ -252,7 +240,6 @@ BEGIN
         v_categoria := p_categoria;
     END IF;
 
-    -- 🚨 SE TODOS OS PARÂMETROS FOREM NULL → NÃO RETORNAR NADA
     IF v_nome IS NULL
        AND v_categoria IS NULL
        AND p_preco_min IS NULL
@@ -269,7 +256,6 @@ BEGIN
                     AND ($4 IS NULL OR preco <= $4)
                     AND ($5 IS NULL OR quantidade >= $5)';
 
-    -- Ordenação segura
     CASE lower(coalesce(p_ordenar_by, 'id'))
       WHEN 'id' THEN v_order_by := 'id';
       WHEN 'nome' THEN v_order_by := 'nome';
@@ -293,7 +279,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.listar_por_categoria(
+CREATE FUNCTION public.listar_por_categoria(
     p_categoria TEXT
 )
 RETURNS TABLE (
@@ -305,7 +291,6 @@ RETURNS TABLE (
     criado_em TIMESTAMP WITH TIME ZONE
 )
 LANGUAGE plpgsql
-SET search_path = public, pg_temp
 AS $$
 BEGIN
     RETURN QUERY
@@ -317,12 +302,50 @@ BEGIN
         categoria,
         criado_em
     FROM public.produtos
-    WHERE categoria = p_categoria;  -- FILTRO EXATO, sem ILIKE
+    WHERE categoria = p_categoria;
 END;
 $$;
 
--- NOTE: Examples for calling the REST API with a service role key must
--- live in your backend code (e.g. Python/Node). Removed the embedded
--- Python example to keep this file valid SQL. Use a server-side
--- implementation that reads `SUPABASE_SERVICE_ROLE_KEY` from environment
--- variables and performs writes when necessary.
+-- ============================================================
+-- HABILITAR ROW LEVEL SECURITY (RLS) PARA TESTES NO POSTMAN
+-- ============================================================
+
+-- CLIENTES
+ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS clientes_all ON public.clientes;
+CREATE POLICY clientes_all
+ON public.clientes
+FOR ALL
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- PRODUTOS
+ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS produtos_all ON public.produtos;
+CREATE POLICY produtos_all
+ON public.produtos
+FOR ALL
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- PEDIDOS
+ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS pedidos_all ON public.pedidos;
+CREATE POLICY pedidos_all
+ON public.pedidos
+FOR ALL
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- ITENS_PEDIDO
+ALTER TABLE public.itens_pedido ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS itens_pedido_all ON public.itens_pedido;
+CREATE POLICY itens_pedido_all
+ON public.itens_pedido
+FOR ALL
+TO anon
+USING (true)
+WITH CHECK (true);
