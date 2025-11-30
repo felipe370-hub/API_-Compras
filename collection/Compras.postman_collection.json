@@ -1,0 +1,210 @@
+{
+	"info": {
+		"_postman_id": "40e9b85e-9656-46b8-b1cc-e371d6af823f",
+		"name": "Compras",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39663065"
+	},
+	"item": [
+		{
+			"name": "pedidos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"nome\":{{id_clientes}}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{path}}/rest/v1/clientes?id=eq.{{id_clientes}}",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"clientes"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "eq.{{id_clientes}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atualizar_pedidos",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{path}}/rest/v1/pedidos?id=eq.{{id_pedido}}",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"pedidos"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "eq.{{id_pedido}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deletar_pedidos",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{path}}/rest/v1/pedido?id=eq.{{id_pedido}}",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"pedido"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "eq.{{id_pedido}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "productId",
+			"value": ""
+		},
+		{
+			"key": "id_clientes",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "pedido_id",
+			"value": ""
+		},
+		{
+			"key": "item_pedido_id",
+			"value": ""
+		},
+		{
+			"key": "last_produto_id",
+			"value": ""
+		},
+		{
+			"key": "last_preco_unitario",
+			"value": ""
+		},
+		{
+			"key": "last_quantidade",
+			"value": ""
+		}
+	]
+}

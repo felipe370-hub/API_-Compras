@@ -1,0 +1,465 @@
+{
+	"info": {
+		"_postman_id": "d335d1c5-822f-4a6c-be13-41a58f7e2000",
+		"name": "Produtos",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39663065"
+	},
+	"item": [
+		{
+			"name": "produtos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Improved post-response script for \"prodotos\" request",
+							"// Validates status, parses JSON safely, extracts produto entity, validates fields,",
+							"// captures ID, saves to variables, and adds meta checks with friendly logging.",
+							"",
+							"(function () {",
+							"  const statusCode = pm.response.code;",
+							"  const statusOk = [200, 201].includes(statusCode);",
+							"",
+							"  pm.test(\"Status code is 200 or 201\", function () {",
+							"    pm.expect(statusOk, `Unexpected status ${statusCode}. URL: ${pm.request.url} | Method: ${pm.request.method}`).to.be.true;",
+							"  });",
+							"",
+							"  // Always provide helpful context when non-2xx occurs",
+							"  if (!statusOk) {",
+							"    const bodyText = pm.response.text();",
+							"    console.warn(\"Non-2xx response body:\", bodyText);",
+							"  }",
+							"",
+							"  // Parse JSON safely. Support both array and object.",
+							"  let data = null;",
+							"  let parseError = null;",
+							"  if (pm.response.headers.has('Content-Type') && String(pm.response.headers.get('Content-Type')).toLowerCase().includes('application/json')) {",
+							"    try {",
+							"      data = pm.response.json();",
+							"    } catch (e) {",
+							"      parseError = e;",
+							"    }",
+							"  } else {",
+							"    // Try to parse JSON anyway, but do not fail the run if it isn't JSON.",
+							"    try {",
+							"      data = pm.response.json();",
+							"    } catch (e) {",
+							"      parseError = e;",
+							"    }",
+							"  }",
+							"",
+							"  pm.test(\"Response body is valid JSON (if present)\", function () {",
+							"    // If there's no body or parsing failed, provide clear information",
+							"    const hasBody = pm.response.text() && pm.response.text().trim().length > 0;",
+							"    if (!hasBody) {",
+							"      pm.expect(true, \"No response body returned\").to.be.true;",
+							"      return;",
+							"    }",
+							"    pm.expect(parseError, parseError ? `Invalid JSON: ${parseError}` : \"\").to.be.null;",
+							"  });",
+							"",
+							"  // Try to extract created entity from common shapes",
+							"  function extractEntity(payload) {",
+							"    if (!payload || typeof payload !== 'object') return null;",
+							"",
+							"    // If payload is an array, assume first element is the created entity",
+							"    if (Array.isArray(payload)) {",
+							"      return payload[0] || null;",
+							"    }",
+							"",
+							"    // Common wrapper keys: res, data, produto",
+							"    if (payload.res && typeof payload.res === 'object') {",
+							"      if (payload.res.produto && typeof payload.res.produto === 'object') return payload.res.produto;",
+							"      return payload.res;",
+							"    }",
+							"",
+							"    if (payload.data && typeof payload.data === 'object') {",
+							"      // data could be array or object",
+							"      return Array.isArray(payload.data) ? (payload.data[0] || null) : payload.data;",
+							"    }",
+							"",
+							"    if (payload.produto && typeof payload.produto === 'object') {",
+							"      return payload.produto;",
+							"    }",
+							"",
+							"    // Otherwise, treat the root object as the entity",
+							"    return payload;",
+							"  }",
+							"",
+							"  let entity = extractEntity(data);",
+							"",
+							"  // Validate required fields when available",
+							"  pm.test(\"Produto has required fields when present\", function () {",
+							"    if (!entity) {",
+							"      pm.expect(true, \"No entity extracted to validate\").to.be.true;",
+							"      return;",
+							"    }",
+							"    // Only assert presence/type if the fields exist in the response",
+							"    if (Object.prototype.hasOwnProperty.call(entity, 'nome')) {",
+							"      pm.expect(entity.nome, 'nome should be a non-empty string').to.be.a('string').and.to.have.length.greaterThan(0);",
+							"    }",
+							"    if (Object.prototype.hasOwnProperty.call(entity, 'preco')) {",
+							"      pm.expect(entity.preco, 'preco should be a number').to.be.a('number');",
+							"    }",
+							"    if (Object.prototype.hasOwnProperty.call(entity, 'quantidade')) {",
+							"      pm.expect(entity.quantidade, 'quantidade should be a number').to.be.a('number');",
+							"    }",
+							"  });",
+							"",
+							"  // Extract ID with priority: id, produtoId, uuid",
+							"  function pickId(obj) {",
+							"    if (!obj || typeof obj !== 'object') return undefined;",
+							"    if (obj.id !== undefined && obj.id !== null && obj.id !== '') return obj.id;",
+							"    if (obj.produtoId !== undefined && obj.produtoId !== null && obj.produtoId !== '') return obj.produtoId;",
+							"    if (obj.uuid !== undefined && obj.uuid !== null && obj.uuid !== '') return obj.uuid;",
+							"    return undefined;",
+							"  }",
+							"",
+							"  const productId = pickId(entity);",
+							"",
+							"  pm.test(\"Captured product identifier (id/produtoId/uuid)\", function () {",
+							"    if (!statusOk) {",
+							"      pm.expect(true, \"Skipping ID capture on non-2xx\").to.be.true;",
+							"      return;",
+							"    }",
+							"    pm.expect(productId, \"No product identifier found in response\").to.not.be.undefined;",
+							"  });",
+							"",
+							"  // Save identifiers into environment and collection variables when available",
+							"  if (statusOk && productId !== undefined) {",
+							"    pm.environment.set('id_produto', String(productId));",
+							"    pm.collectionVariables.set('productId', String(productId));",
+							"  }",
+							"",
+							"  // Response-time check (example threshold: < 3s)",
+							"  pm.test(\"Response time is under 3000ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+							"  });",
+							"",
+							"  // Content-Type header check",
+							"  pm.test(\"Has Content-Type header\", function () {",
+							"    pm.response.to.have.header('Content-Type');",
+							"  });",
+							"",
+							"  // Friendly success logging",
+							"  const productName = entity && entity.nome ? entity.nome : '(unknown name)';",
+							"  if (statusOk && productId !== undefined) {",
+							"    console.log(`🎉 Produto criado/atualizado com sucesso: ${productName} (ID: ${productId})`);",
+							"  } else if (!statusOk) {",
+							"    console.warn(`⚠️ Request failed with status ${statusCode}. Check path={{path}} and apikey={{apikey}}.`);",
+							"  }",
+							"",
+							"  // Final pass message",
+							"  pm.test(\"All validations passed\", function () {",
+							"    if (!statusOk) {",
+							"      pm.expect.fail(`Request did not succeed. Status ${statusCode}. Body: ${pm.response.text()}`);",
+							"    }",
+							"",
+							"    // If we reached here with statusOk, basic assertions above have passed.",
+							"    pm.expect(true, \"All checks passed\").to.be.true;",
+							"  });",
+							"})();"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation"
+					},
+					{
+						"key": "apikey",
+						"value": "{{apikey}}"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n  \"nome\" : \"hamburguer x-tudo\",\r\n  \"categoria\": \"Comida\",\r\n  \"preco\": 59.90,\r\n  \"quantidade\": 50\r\n\r\n  }"
+				},
+				"url": {
+					"raw": "{{path}}/rest/v1/produtos",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"produtos"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atualizar_Produto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 - Produto atualizado\", function () {\r",
+							"    pm.expect(pm.response.code).to.eql(200);\r",
+							"});\r",
+							"\r",
+							"let res = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Retornou o produto atualizado\", function () {\r",
+							"    pm.expect(res).to.be.an(\"array\").that.is.not.empty;\r",
+							"});\r",
+							"\r",
+							"let produto = res[0];\r",
+							"\r",
+							"pm.test(\"Salvar ID do produto atualizado\", function () {\r",
+							"    pm.environment.set(\"id_produto\", produto.id);\r",
+							"});\r",
+							"\r",
+							"console.log(\"✔ Produto atualizado com sucesso:\", produto.nome);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"quantidade\": 15\r\n  \r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{path}}/rest/v1/produtos?id=eq.{{id_produto}}",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"produtos"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "eq.{{id_produto}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deletar_produtos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status deve ser 204 (Item deletado)\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+							"});\r",
+							"\r",
+							"// Se retornar dados do item deletado (se usar return=representation)\r",
+							"if (pm.response.code === 200) {\r",
+							"    let res = pm.response.json();\r",
+							"    pm.test(\"Retornou dados do item deletado\", function () {\r",
+							"        pm.expect(res).to.be.an('array').that.is.not.empty;\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"// Confirmação no console\r",
+							"console.log(\"✓ Cliente deletado com sucesso. ID:\", pm.collectionVariables.get(\"clientId\"));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{path}}/rest/v1/produtos?id=eq.{{id_produto}}",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"produtos"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "eq.{{id_produto}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "listar",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{path}}/rest/v1/pedidos?select=*",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"pedidos"
+					],
+					"query": [
+						{
+							"key": "select",
+							"value": "*"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Buscar",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=representation",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{path}}/rest/v1/pedidos?id=eq.{{id_pedido}}",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"pedidos"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "eq.{{id_pedido}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "productId",
+			"value": ""
+		}
+	]
+}

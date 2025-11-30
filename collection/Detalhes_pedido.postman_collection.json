@@ -1,0 +1,95 @@
+{
+	"info": {
+		"_postman_id": "db28ddb9-4913-4133-be42-fe9d7f3b90de",
+		"name": "Detalhes_pedido",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39663065"
+	},
+	"item": [
+		{
+			"name": "itens_pedidos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"{\r",
+							"  \"pedido_id\": {{pedidoId}},\r",
+							"  \"produto_id\": 3,\r",
+							"  \"quantidade\": 2,\r",
+							"  \"preco_unitario\": 39.90\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "{{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{apikey}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Prefer",
+						"value": "return=represetation",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{path}}/rest/v1/itens_pedido",
+					"host": [
+						"{{path}}"
+					],
+					"path": [
+						"rest",
+						"v1",
+						"itens_pedido"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "itens_pedido_detalhado",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "item_pedido_id",
+			"value": ""
+		},
+		{
+			"key": "last_produto_id",
+			"value": ""
+		},
+		{
+			"key": "last_preco_unitario",
+			"value": ""
+		},
+		{
+			"key": "last_quantidade",
+			"value": ""
+		}
+	]
+}
