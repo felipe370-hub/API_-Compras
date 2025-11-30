@@ -1,248 +1,232 @@
 # API_-Compras
-api de compras
 
-📘 API de Compras – Documentação Completa
+API de Compras (FastAPI + Supabase)  
 
-A API de Compras é um sistema simples para cadastro de clientes, pedidos e itens de pedido, funcionando de forma totalmente REST usando o Supabase (PostgREST).
-Ela permite criar um fluxo básico de vendas:
+---
 
-Cadastrar um cliente
+## 📘 Resumo e Objetivo
 
-Criar um pedido para esse cliente
+A **API de Compras** é um sistema simples para cadastro de **clientes**, **produtos**, **pedidos** e **itens de pedidos**, funcionando totalmente via **REST** usando **Supabase** (PostgREST).  
 
-Adicionar itens dentro do pedido
+**Objetivo:**  
+- Organizar informações de clientes  
+- Registrar pedidos e itens  
+- Consultar rapidamente dados de vendas  
+- Servir como base para sistemas de vendas, e-commerce ou ERP simples  
 
-Consultar pedidos, clientes e itens
+Fluxo lógico da API:  
+**Cliente → Pedido → Itens do Pedido**  
 
+---
 
-🎯 Objetivo da API
+## ⚙️ Como rodar (básico)
 
-Esta API tem como objetivo:
+1. Clonar o repositório:  
+bash
+git clone https://github.com/felipe370-hub/API_-Compras.git
+cd API_-Compras
+Instalar dependências:
 
-Organizar informações de clientes
+bash
+Copiar código
+pip install -r requirements.txt
+Configurar variáveis de ambiente no .env:
 
-Registrar pedidos feitos pelos clientes
+env
+Copiar código
+SUPABASE_URL=https://<sua-url>.supabase.co
+SUPABASE_ANON_KEY=<sua-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<sua-service-role-key>
+Rodar a API:
 
-Registrar itens dentro de cada pedido
+bash
+Copiar código
+uvicorn main:app --reload
+Verificar health check:
 
-Permitir consultas rápidas de todos esses dados
+http
+Copiar código
+GET /health
+Exemplo de resposta:
 
-Servir como base para sistemas de vendas, e-commerce ou ERP simples
+json
+Copiar código
+{
+  "status": "ok"
+}
+🌐 Endpoints e Rotas
+👤 Clientes
+Listar clientes
+GET /clientes
 
-Ela funciona sem backend próprio — o Supabase já gera automaticamente os endpoints usando sua camada REST.
+Exemplo de resposta:
 
-🧱 Como a API funciona internamente
-
-A API é baseada em três tabelas principais:
-
-1️⃣ Usuarios
-
-Guarda informações das pessoas que fazem pedidos.
-
-Exemplo:
-
-João da Silva
-
-maria@email.com
-
-(11) 99999-9999
-
-2️⃣ pedidos
-
-Cada pedido pertence a um cliente.
-
-Exemplo:
-
-Pedido #1 → Cliente 1
-
-Data: 2025-01-01
-
-Status: “aberto”
-
-4:Produtos
-Onde irá cadastrar os produtos da sua loja( modelo de loja você escolhe)
+json
+Copiar código
+[
   {
-  "nome" : "Brigadeiro",
-  "categoria": "Doce",
-  "preco": 9.90,
-  "quantidade": 50
+    "id": 1,
+    "nome": "João da Silva",
+    "email": "joao@example.com",
+    "telefone": "11999999999",
+    "criado_em": "2025-11-30T03:00:00Z"
   }
-e quando cadastrar, aparecerá o numero do id automaticamente ficamdo assim
-    {
-        "id": 4,
-        "cliente_id": 1,
-        "total": 0,
-        "status": "pendente",
-        "criado_em": "2025-11-30T03:28:59.008224+00:00"
-    }
-
-3️ itens_pedido
-
-Cada item pertence a um pedido.
-
-Exemplo:
-
-Produto: Camiseta, mas vais ser refirida pela id gerada no Produtos
-
-  "pedido_id":3 ,
-  "produto_id": 1,
-  "quantidade": 1,
-  "preco_unitario": 25.9
-
-E quando entrar dentro de itens_pedido_detalhado, irá mostrar detaladamente o seu pedido:
-    {
-        "item_id": 1,
-        "pedido_id": 3,
-        "cliente_id": 1,
-        "cliente_nome": "Felipe Davids",
-        "produto_id": 1,
-        "produto_nome": "Hamburguer",
-        "produto_categoria": "Salgado",
-        "quantidade": 1,
-        "preco_unitario": 25.9,
-        "total_item": 25.9,
-        "total_pedido": 51.8,
-        "status_pedido": "pendente",
-        "criado_em_pedido": "2025-11-30T02:47:20.190142+00:00"
-    },
-
-
-
-🔄 Fluxo lógico da API (visão simples)
-Cliente → faz → Pedido → contém → Itens
-
-
-Ou seja:
-✔ Primeiro a loja irá disponibilizar os produtos
-✔ Segundo cria o cliente
-✔ Depois cria um pedido para esse cliente
-✔ Depois adiciona itens dentro desse pedido
-
-Assim, tudo fica organizado e relacionado.
-
-🌐 URL Base da API
-
-👉 INSIRA AQUI SUA URL DO SUPABASE REST
-
-https://xoveqvqgwquqmrlxskwn.supabase.co/rest/v1
-
-
-Cada endpoint é acessado adicionando o nome da tabela no final da URL.
-
-🧪 Como fazer requisições (explicação simples)
-
-Você usa métodos HTTP:
-
-Método	Para que serve
-GET	Buscar dados
-POST	Criar novo registro
-PATCH	Atualizar registro
-DELETE	Apagar registro
-
-Exemplo:
-
-GET /clientes
-POST /pedidos
-POST /itens_pedido
-
-
-Todas as requisições são JSON.
-
-📌 Endpoints explicados
-
-Aqui está cada rota explicada de forma simples para quem nunca viu a API.
-
-👤 1. CLIENTES
-➤ O que é?
-
-Pessoas que fazem pedidos.
-
-➤ Para que serve?
-
-Antes de criar um pedido, você precisa de um cliente.
-
-✔ GET - Listar clientes
-GET /clientes
-
-
-Retorna todos os clientes cadastrados.
-
-✔ POST - Criar cliente
+]
+Criar cliente
 POST /clientes
-Content-Type: application/json
 
+json
+Copiar código
 {
   "nome": "João da Silva",
   "email": "joao@example.com",
   "telefone": "11999999999"
 }
+Exemplo de resposta:
 
-📦 2. PEDIDOS
-➤ O que é?
+json
+Copiar código
+{
+  "id": 2,
+  "nome": "João da Silva",
+  "email": "joao@example.com",
+  "telefone": "11999999999",
+  "criado_em": "2025-11-30T03:15:00Z"
+}
+📦 Produtos
+Listar produtos
+GET /produtos
 
-Um pedido criado por um cliente.
+Exemplo de resposta:
 
-Cada pedido pertence a um cliente específico (cliente_id).
+json
+Copiar código
+[
+  {
+    "id": 1,
+    "nome": "Brigadeiro",
+    "categoria": "Doce",
+    "preco": 9.90,
+    "quantidade": 50,
+    "criado_em": "2025-11-30T03:10:00Z"
+  }
+]
+Criar produto
+POST /produtos
 
-✔ GET - Listar pedidos
+json
+Copiar código
+{
+  "nome": "Brigadeiro",
+  "categoria": "Doce",
+  "preco": 9.90,
+  "quantidade": 50
+}
+Exemplo de resposta:
+
+json
+Copiar código
+{
+  "id": 2,
+  "nome": "Brigadeiro",
+  "categoria": "Doce",
+  "preco": 9.90,
+  "quantidade": 50,
+  "criado_em": "2025-11-30T03:20:00Z"
+}
+🧾 Pedidos
+Listar pedidos
 GET /pedidos
 
-✔ POST - Criar pedido
-POST /pedidos
-Content-Type: application/json
+Exemplo de resposta:
 
+json
+Copiar código
+[
+  {
+    "id": 1,
+    "cliente_id": 1,
+    "total": 0,
+    "status": "aberto",
+    "criado_em": "2025-11-30T03:25:00Z"
+  }
+]
+Criar pedido
+POST /pedidos
+
+json
+Copiar código
 {
   "cliente_id": 1,
-  "data_pedido": "2025-01-01T10:00:00",
+  "total": 0,
   "status": "aberto"
 }
+Exemplo de resposta:
 
+json
+Copiar código
+{
+  "id": 2,
+  "cliente_id": 1,
+  "total": 0,
+  "status": "aberto",
+  "criado_em": "2025-11-30T03:30:00Z"
+}
+Detalhe detalhado de um pedido
+GET /pedidos/{pedido_id}/detalhe_detalhado
 
-⚠ cliente_id deve existir na tabela clientes.
+Exemplo de resposta:
 
-🧰 3. ITENS DO PEDIDO
-➤ O que é?
+json
+Copiar código
+[
+  {
+    "id": 1,
+    "pedido_id": 1,
+    "produto_id": 1,
+    "quantidade": 2,
+    "preco_unitario": 9.90,
+    "produto_nome": "Brigadeiro",
+    "produto_categoria": "Doce",
+    "cliente_nome": "João da Silva",
+    "total_item": 19.8,
+    "total_pedido": 19.8,
+    "status_pedido": "aberto",
+    "criado_em_pedido": "2025-11-30T03:25:00Z"
+  }
+]
+📑 Itens do Pedido
+Listar itens do pedido
+GET /itens-pedido
 
-Produtos/serviços adicionados dentro de um pedido.
+Criar item do pedido
+POST /itens-pedido
 
-✔ GET - Listar itens
-GET /itens_pedido
-
-✔ POST - Criar item
-POST /itens_pedido
-Content-Type: application/json
-
+json
+Copiar código
 {
   "pedido_id": 1,
-  "descricao": "Produto X",
-  "quantidade": 2,
-  "valor_unitario": 50.00,
-  "sub_total": 100.00
+  "produto_id": 2,
+  "quantidade": 3,
+  "preco_unitario": 50.0
 }
-✔ POST - {{path}}/rest/v1/rpc/buscar_produtos
-e assim vc colocara qualquer variavel
+Exemplo de resposta:
+
+json
+Copiar código
 {
-  "p_nome": "",
-  "p_categoria": ""
+  "id": 1,
+  "pedido_id": 1,
+  "produto_id": 2,
+  "quantidade": 3,
+  "preco_unitario": 50.0
 }
-irá retonar o que você tanto procura na lista de Produtos
-⚠ pedido_id deve existir na tabela pedidos.
+✅ Observações importantes
+cliente_id deve existir na tabela clientes.
 
-🧭 Ordem recomendada de uso (explicado para iniciantes)
-1️⃣ Criar um cliente
+produto_id deve existir na tabela produtos.
 
-↓
+Rotas funcionam conforme descrito acima.
 
-2️⃣ Criar um pedido para esse cliente
-
-↓
-
-3️⃣ Adicionar itens ao pedido
-
-↓
-
-4️⃣ Consultar relatórios (GET)
-
-Isso simula o comportamento real de um sistema de vendas.
-lik do render
+🔗 Link do Deploy Render
 https://api-compras-1.onrender.com
