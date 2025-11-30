@@ -47,13 +47,10 @@ Verificar health check:
 http
 Copiar código
 GET /health
-Exemplo de resposta:
 
-json
-Copiar código
-{
   "status": "ok"
-}
+
+---
 🌐 Endpoints e Rotas
 👤 Clientes
 Listar clientes
@@ -61,9 +58,6 @@ GET /clientes
 
 Exemplo de resposta:
 
-json
-Copiar código
-[
   {
     "id": 1,
     "nome": "João da Silva",
@@ -71,18 +65,17 @@ Copiar código
     "telefone": "11999999999",
     "criado_em": "2025-11-30T03:00:00Z"
   }
-]
+  
 Criar cliente
 POST /clientes
 
-json
-Copiar código
 {
   "nome": "João da Silva",
   "email": "joao@example.com",
   "telefone": "11999999999"
 }
-Exemplo de resposta:
+
+
 
 json
 Copiar código
@@ -93,14 +86,11 @@ Copiar código
   "telefone": "11999999999",
   "criado_em": "2025-11-30T03:15:00Z"
 }
+---
 📦 Produtos
 Listar produtos
 GET /produtos
 
-Exemplo de resposta:
-
-json
-Copiar código
 [
   {
     "id": 1,
@@ -111,21 +101,27 @@ Copiar código
     "criado_em": "2025-11-30T03:10:00Z"
   }
 ]
+
+
+
+
 Criar produto
 POST /produtos
 
-json
-Copiar código
+
+
+
 {
   "nome": "Brigadeiro",
   "categoria": "Doce",
   "preco": 9.90,
   "quantidade": 50
 }
-Exemplo de resposta:
 
-json
-Copiar código
+
+
+
+
 {
   "id": 2,
   "nome": "Brigadeiro",
@@ -134,14 +130,18 @@ Copiar código
   "quantidade": 50,
   "criado_em": "2025-11-30T03:20:00Z"
 }
+
+
+---
+
+
 🧾 Pedidos
 Listar pedidos
 GET /pedidos
 
-Exemplo de resposta:
 
-json
-Copiar código
+
+
 [
   {
     "id": 1,
@@ -151,20 +151,27 @@ Copiar código
     "criado_em": "2025-11-30T03:25:00Z"
   }
 ]
+
+
+
+
 Criar pedido
 POST /pedidos
 
-json
-Copiar código
+
+
+
+
 {
   "cliente_id": 1,
   "total": 0,
   "status": "aberto"
 }
-Exemplo de resposta:
 
-json
-Copiar código
+
+
+
+
 {
   "id": 2,
   "cliente_id": 1,
@@ -175,11 +182,9 @@ Copiar código
 Detalhe detalhado de um pedido
 GET /pedidos/{pedido_id}/detalhe_detalhado
 
-Exemplo de resposta:
 
-json
-Copiar código
-[
+
+
   {
     "id": 1,
     "pedido_id": 1,
@@ -194,7 +199,12 @@ Copiar código
     "status_pedido": "aberto",
     "criado_em_pedido": "2025-11-30T03:25:00Z"
   }
-]
+
+
+
+---
+
+
 📑 Itens do Pedido
 Listar itens do pedido
 GET /itens-pedido
@@ -202,18 +212,22 @@ GET /itens-pedido
 Criar item do pedido
 POST /itens-pedido
 
-json
-Copiar código
+
+
+
+
+
 {
   "pedido_id": 1,
   "produto_id": 2,
   "quantidade": 3,
   "preco_unitario": 50.0
 }
-Exemplo de resposta:
 
-json
-Copiar código
+
+
+
+
 {
   "id": 1,
   "pedido_id": 1,
@@ -221,6 +235,13 @@ Copiar código
   "quantidade": 3,
   "preco_unitario": 50.0
 }
+
+
+
+---
+
+
+
 ✅ Observações importantes
 cliente_id deve existir na tabela clientes.
 
