@@ -2,7 +2,7 @@ import os
 from typing import Optional, List
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import httpx
 
 load_dotenv()
@@ -10,7 +10,6 @@ load_dotenv()
 # ------------------- CONFIGURAÇÃO SUPABASE -------------------
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 POSTGREST_URL = f"{SUPABASE_URL}/rest/v1"
 
 CLIENTES_TABLE = "clientes"
@@ -82,6 +81,50 @@ def postgrest_headers(api_key: str = ANON_KEY):
 async def health():
     return {"status": "ok"}
 
+# ------------------- ROTAS CLIENTES -------------------
+@app.get("/clientes", response_model=List[ClienteOut])
+async def list_clientes(limit: int = 50, offset: int = 0):
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(f"{POSTGREST_URL}/{CLIENTES_TABLE}", 
+                             headers=postgrest_headers(),
+                             params={"select": "*", "limit": str(limit), "offset": str(offset)})
+    if r.status_code >= 400:
+        raise HTTPException(r.status_code, r.text)
+    return r.json()
+
+# ------------------- ROTAS PRODUTOS -------------------
+@app.get("/produtos", response_model=List[ProdutoOut])
+async def list_produtos(limit: int = 50, offset: int = 0):
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(f"{POSTGREST_URL}/{PRODUTOS_TABLE}", 
+                             headers=postgrest_headers(),
+                             params={"select": "*", "limit": str(limit), "offset": str(offset)})
+    if r.status_code >= 400:
+        raise HTTPException(r.status_code, r.text)
+    return r.json()
+
+# ------------------- ROTAS PEDIDOS -------------------
+@app.get("/pedidos", response_model=List[PedidoOut])
+async def list_pedidos(limit: int = 50, offset: int = 0):
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(f"{POSTGREST_URL}/{PEDIDOS_TABLE}", 
+                             headers=postgrest_headers(),
+                             params={"select": "*", "limit": str(limit), "offset": str(offset)})
+    if r.status_code >= 400:
+        raise HTTPException(r.status_code, r.text)
+    return r.json()
+
+# ------------------- ROTAS ITENS PEDIDO -------------------
+@app.get("/itens-pedido", response_model=List[ItensPedidoOut])
+async def list_itens_pedido(limit: int = 50, offset: int = 0):
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(f"{POSTGREST_URL}/{ITENS_PEDIDO_TABLE}", 
+                             headers=postgrest_headers(),
+                             params={"select": "*", "limit": str(limit), "offset": str(offset)})
+    if r.status_code >= 400:
+        raise HTTPException(r.status_code, r.text)
+    return r.json()
+
 # ------------------- ROTA DETALHE DETALHADO -------------------
 @app.get("/pedidos/{pedido_id}/detalhe_detalhado", response_model=List[ItensPedidoDetalhado])
 async def detalhe_detalhado(pedido_id: int):
@@ -100,21 +143,21 @@ async def detalhe_detalhado(pedido_id: int):
         # Buscar cliente
         r_cliente = await client.get(f"{POSTGREST_URL}/{CLIENTES_TABLE}",
                                      headers=postgrest_headers(),
-                                     params={"id": f"eq.{pedido['cliente_id']}"} )
+                                     params={"id": f"eq.{pedido['cliente_id']}"})
         cliente_list = r_cliente.json() if r_cliente.status_code < 400 else []
         cliente_nome = cliente_list[0]['nome'] if cliente_list else None
 
         # Buscar itens
         r_itens = await client.get(f"{POSTGREST_URL}/{ITENS_PEDIDO_TABLE}",
                                    headers=postgrest_headers(),
-                                   params={"pedido_id": f"eq.{pedido_id}"} )
+                                   params={"pedido_id": f"eq.{pedido_id}"})
         itens = r_itens.json() if r_itens.status_code < 400 else []
 
         # Adicionar detalhes dos produtos e cliente
         for item in itens:
             r_produto = await client.get(f"{POSTGREST_URL}/{PRODUTOS_TABLE}",
                                          headers=postgrest_headers(),
-                                         params={"id": f"eq.{item['produto_id']}"} )
+                                         params={"id": f"eq.{item['produto_id']}"})
             produto_list = r_produto.json() if r_produto.status_code < 400 else []
             item['produto_nome'] = produto_list[0]['nome'] if produto_list else None
             item['produto_categoria'] = produto_list[0]['categoria'] if produto_list else None
